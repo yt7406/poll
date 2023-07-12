@@ -43,7 +43,14 @@ module.exports = function (app, passport,io) {
             userHandler.addUser(req, res);
         });
 
-
+        app.post('/login',
+        passport.authenticate('local', { session: false }),
+        function(req, res) {
+            const token = jwt.sign(req.user, process.env.JWT_KEY);
+            if(!req.user)
+            return res.send(err);
+            res.json({'token':token});
+        });
   
     
 
@@ -62,6 +69,13 @@ module.exports = function (app, passport,io) {
                 res.sendFile(path + '/public/user.html');
         });
 
+    app.post('/poll',(req,res)=>{
+        if(!req.body.poll_id)
+        return res.status(400).send('no poll_id');
+        pollHandler.getPollById(req,res);
+            
+    });
+
     
     app.post('/auth/vote',passport.authenticate('jwt',{session:false}),(req,res)=>{
         if(!req.body.poll_id||!req.body.option)
@@ -69,6 +83,10 @@ module.exports = function (app, passport,io) {
         pollHandler.update(req,res,io);
     })
 
+
+    app.get('/auth/user/polls',passport.authenticate('jwt',{session:false}),(req,res)=>{
+        userHandler.getPolls(req,res);
+    });
 
     app.post('/auth/user/change_password',passport.authenticate('jwt',{session:false}),(req,res)=>{
         if(!req.body.current_password||!req.body.new_password)
