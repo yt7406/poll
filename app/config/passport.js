@@ -4,6 +4,9 @@ var GitHubStrategy = require('passport-github').Strategy;
 var User = require('../models/users');
 var LocalStrategy = require('passport-local').Strategy;
 var crypto = require('crypto');
+const passportJWT = require("passport-jwt");
+const JWTStrategy   = passportJWT.Strategy;
+const ExtractJWT = passportJWT.ExtractJwt;
 
 
 module.exports = function (passport) {
@@ -29,7 +32,20 @@ module.exports = function (passport) {
 ));
 
 // to verify using the JWT token
-
+passport.use(new JWTStrategy({
+  jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+  secretOrKey   : process.env.JWT_KEY
+},
+function (jwtPayload, cb) {
+  return User.findById(jwtPayload)
+      .then(user => {
+          return cb(null, user.id);
+      })
+      .catch(err => {
+          return cb(err);
+      });
+}
+));
 
 
 
